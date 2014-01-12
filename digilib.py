@@ -6,7 +6,6 @@
 import requests
 import bs4
 
-broken=[]
 
 digi = "http://www.digi.ee"
 
@@ -65,7 +64,7 @@ def get_forums():
         dforum["numb_threads"] = int(forum.find("td", {"class":"author"}).text)
         yield dforum
 
-def get_page_of_threads_in_forum(forum_id=212, page=0):
+def get_page_of_threads_in_forum(forum_id, page=0):
     """returns a list of threads in a from in one page"""
     r = requests.get(digi+"/foorum/index.php?action=vtopic&forum={}&sortBy=1&page={}".format(forum_id, page), allow_redirects=False)
     if r.status_code != 200:
@@ -88,13 +87,13 @@ def get_page_of_threads_in_forum(forum_id=212, page=0):
         dt["views"] = int(thread.contents[7].text)
         yield dt
 
-def get_all_threads_in_forum(forum_id=212):
+def get_all_threads_in_forum(forum_id):
     """returns all threads in a forum"""
     page=0
     while True:
         try:
-            print("page {}".format(page))
-            for thread in get_page_of_threads_in_forum(forum_id, page):
+            print("page {} forum {}".format(page, forum_id))
+            for thread in get_page_of_threads_in_forum(forum_id=forum_id, page=page):
                 yield thread
             page += 1
         except Exception as err:
@@ -147,7 +146,7 @@ def minibb_to_plainbb(post):
 
     return p
 
-def get_page_in_thread(thread_id=33458, page=0):
+def get_page_in_thread(thread_id, page):
     """returns posts from one page in a thread"""
     forumid = requests.get(digi+"/foorum/index.php?action=vthread&topic={}&page={}".format(thread_id, page), allow_redirects=False).headers["location"][57:][:3]
     r = requests.get(digi+"/foorum/index.php?action=vthread&forum={}&topic={}&page={}".format(forumid, thread_id, page), allow_redirects=False)
@@ -161,20 +160,21 @@ def get_page_in_thread(thread_id=33458, page=0):
         dp["role"] = dp["user"][1]
         dp["user"] = dp["user"][0]
         dp["user_id"] = int(post.contents[1].contents[1].findAll("a")[1].attrs["href"][57:])
-        dp["post_id"] = post.contents[1].contents[3].find("a").attrs["href"][4:]
+        dp["post_id"] = int(post.contents[1].contents[3].find("a").attrs["href"][4:])
         dp["post_date"] = list(post.contents[1].contents[3].strings)[3][13:][:-1].replace("\xa0", " ")
         dp["post"] = "".join(minibb_to_plainbb(post.contents[3].contents[1].contents[1]))
         dp["signature"] = "".join(minibb_to_plainbb(post.contents[3].contents[1].contents[5]))
         yield dp
 
-def get_all_posts_in_thread(thread_id=33458):
+def get_all_posts_in_thread(thread_id):
     """returns all posts from all pages in a thread"""
     page=0
     while True:
         try:
-            print("page {}".format(page))
+            print("page {} thread {}".format(page, thread_id))
             for post in get_page_in_thread(thread_id, page):
                 yield post
             page += 1
         except Exception as err:
+            print("error", err)
             break
