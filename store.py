@@ -6,7 +6,7 @@ from pymongo import MongoClient
 import digilib
 
 client = MongoClient()
-db = client.digi_mirror
+db = client.digi_clone
 
 forums = db.forums
 for forum in digilib.get_forums():
