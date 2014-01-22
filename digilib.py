@@ -126,6 +126,14 @@ def minibb_to_plainbb(post):
                 p.append("[hl]{}[/hl]".format("".join(minibb_to_plainbb(child))))
             elif child.attrs.get("class", [])[0] == "spoiler":
                 p.append("[spoiler]{}[/spoiler]".format("".join(minibb_to_plainbb(child))))
+            elif child.attrs.get("class", [])[0] == "quote":
+                if child.next.attrs.get("class", [])[0] == "quoting":
+                    quoting = str(child.next.text).strip()
+                    p.append("[quote={}]{}[/quote]".format(quoting, "".join(minibb_to_plainbb(child))))
+                else:
+                    p.append("[quote]{}[/quote]".format("".join(minibb_to_plainbb(child))))
+            elif child.attrs.get("class", [])[0] == "quoting":
+                pass 
             else:
                 p.append(child)
         elif child.name == "pre":
@@ -142,7 +150,8 @@ def minibb_to_plainbb(post):
         elif child.name == "object":
             p.append("[youtube=http://www.youtube.com/watch?v={}]".format(child.param.attrs["value"][25:]))
         else:
-            p.append(child)
+            print("ERROR: can't decode:", child)
+            p.append(str(child))
 
     return p
 
